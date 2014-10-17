@@ -1,0 +1,6 @@
+
+class NameMap {
+ 
+  public: NameMap();
+};
+

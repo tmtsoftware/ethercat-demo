@@ -1,0 +1,6 @@
+
+class CyclicMotor {
+ 
+  public: CyclicMotor();
+};
+
