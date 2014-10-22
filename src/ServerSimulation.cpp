@@ -14,6 +14,10 @@ int main()
   CyclicMotor cyclicMotor = CyclicMotor();
   ConfigLoader configLoader = ConfigLoader();
 
+  // 1. Configure the system
+  vector<SlaveConfig> slaveConfigList = configLoader.loadConfiguration();
+
+
   EtherCatServer etherCatServer = EtherCatServer(&commandQueue, &pdoEntryCache);
   etherCatServer.getDeviceNames();
   std::cout << "Hello World!";

@@ -1,7 +1,9 @@
 
+using namespace std;
+
 class ConfigLoader {
  
   public: ConfigLoader();
-  public: SlaveConfig* loadConfiguration();
+  public: vector<SlaveConfig> loadConfiguration();
 };
 
