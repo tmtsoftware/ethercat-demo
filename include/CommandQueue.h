@@ -1,9 +1,13 @@
+
+using namespace std;
+
 class CommandQueue {
  
-  public: int testValue;
+  public: queue<PdoEntryValue> cmdQueue;
   public: CommandQueue();
 
   public: void addToQueue(PdoEntryValue pdoEntryValue);
   public: PdoEntryValue getNext();
+  public: bool isEmpty();
 };
 

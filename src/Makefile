@@ -4,11 +4,11 @@ all: ectest
 
 ETHER_LOC=/opt/etherlab
 
-CC=g++
-CFLAGS=-c -Wall
+CC=g++ 
+CFLAGS=-c -Wall -std=c++0x -pthread -D_GLIBCXX_USE_NANOSLEEP
 INCS= -I$(ETHER_LOC)/include -I../include
 LOPTS=-Wl,-rpath=$(ETHER_LOC)/lib
-LIBS=-L$(ETHER_LOC)/lib -lethercat
+LIBS=-L$(ETHER_LOC)/lib -lethercat -lpthread
 
 ectest: ServerSimulation.o EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o
 	$(CC) $(LOPTS) $(LIBS) -o $@ $^
