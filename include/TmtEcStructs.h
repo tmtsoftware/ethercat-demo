@@ -1,8 +1,6 @@
 
 struct PdoEntryValue {
-  ec_pdo_entry_info_t pdoEntry;
-  unsigned int domainOffset;
-  unsigned int domainBitPos;
+  unsigned int pdoEntryIndex;
   unsigned int entryValue;
 };
 

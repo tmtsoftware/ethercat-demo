@@ -114,11 +114,11 @@ slave_1_pdo_entries,
 
 EtherCatServer::EtherCatServer() {
   pdoEntryCache = PdoEntryCache();
-  commandQueue = CommandQueue();
   configLoader = ConfigLoader();
 };
 
 void EtherCatServer::startServer() {
+
 
 	cyclicMotor = CyclicMotor(master,  domain1, off_dig_out, bp_dig_out, domain1_pd);
 
@@ -181,7 +181,23 @@ string EtherCatServer::getParameterValue(string deviceName, string parameterName
   return deviceName + "::" + parameterName + "::" + "value";
 };
 
-void EtherCatServer::setParameterValue(string deviceName, string parameterName, string value) {
+// TODO: we need to template this for different types of value
+void EtherCatServer::setParameterValue(string deviceName, string parameterName, int value) {
+	// TEST ONLY - just use the first device
+
+	if (parameterName.compare("parameter1")) {
+		PdoEntryValue pdoEntryValue = PdoEntryValue();
+		pdoEntryValue.pdoEntryIndex = 0;
+		pdoEntryValue.entryValue = value;
+		CommandQueue::instance()->addToQueue(pdoEntryValue);
+	}
+	if (parameterName.compare("parameter2")) {
+		PdoEntryValue pdoEntryValue = PdoEntryValue();
+		pdoEntryValue.pdoEntryIndex = 2;
+		pdoEntryValue.entryValue = value;
+		CommandQueue::instance()->addToQueue(pdoEntryValue);
+	}
+
 
 };
 

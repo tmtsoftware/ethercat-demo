@@ -5,13 +5,26 @@
 #include "CommandQueue.h"
 using namespace std;
 
+// Singleton pattern stuff
+
+CommandQueue* CommandQueue::pInstance = 0;
+
+CommandQueue* CommandQueue::instance() {
+   if (pInstance == 0) {
+      pInstance = new CommandQueue;
+   }
+   return pInstance;
+}
 
 CommandQueue::CommandQueue() {
    cmdQueue = queue<PdoEntryValue>();
 };
 
+// TODO: this class is not thread-safe.  We need to implement locking.
+
 void CommandQueue::addToQueue(PdoEntryValue pdoEntryValue) {
    cmdQueue.push(pdoEntryValue);
+
 }
 
 PdoEntryValue CommandQueue::getNext() {
@@ -23,6 +36,7 @@ PdoEntryValue CommandQueue::getNext() {
 };
 
 bool CommandQueue::isEmpty() {
+
    return cmdQueue.empty();
 };
  

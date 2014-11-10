@@ -1,9 +1,12 @@
 #include <iostream>
 #include <stdio.h>
 #include "ecrt.h"
+#include <queue>
 #include "TmtEcStructs.h"
 #include "temp.h"
+#include "CommandQueue.h"
 #include "CyclicMotor.h"
+
 
 #include <thread>
 
@@ -13,12 +16,16 @@ static unsigned int counter = 0;
 static unsigned int blink = 0;
 static bool terminateFlg = false;
 
+
 // cyclic motor state
 
-CyclicMotor::CyclicMotor() {};
+CyclicMotor::CyclicMotor() {
+}
+;
 
-CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1, unsigned int *off_dig_out,
-		  unsigned int *bp_dig_out, uint8_t *domain1_pd) {
+CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1,
+		unsigned int *off_dig_out, unsigned int *bp_dig_out,
+		uint8_t *domain1_pd) {
 
 	this->master = master;
 	this->domain1 = domain1;
@@ -26,7 +33,8 @@ CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1, unsigned int *
 	this->bp_dig_out = bp_dig_out;
 	this->domain1_pd = domain1_pd;
 
-};
+}
+;
 
 void CyclicMotor::start() {
 
@@ -35,11 +43,13 @@ void CyclicMotor::start() {
 	std::thread t1(&CyclicMotor::startup, this);
 	t1.detach();
 
-};
+}
+;
 
 void CyclicMotor::stop() {
 	terminateFlg = true;
-};
+}
+;
 
 #if 0
 /*****************************************************************************/
@@ -98,33 +108,35 @@ void check_slave_config_states(void)
 
 #endif
 
-void CyclicMotor::startup()
-{
+void CyclicMotor::startup() {
 
 // everything below here is eventually in cyclic motor
 
-    printf("Started.\n");
+	printf("Started.\n");
 
+	while (1) {
+		auto now = std::chrono::system_clock::now();
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-
-    while (1) {
-        auto now = std::chrono::system_clock::now();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-#if 1
-        struct timeval t;
-        gettimeofday(&t, NULL);
-        printf("%u.%03u\n", t.tv_sec, t.tv_usec);
+#if 0
+		struct timeval t;
+		gettimeofday(&t, NULL);
+		printf("%u.%03u\n", t.tv_sec, t.tv_usec);
 #endif
 
-      	this->cyclic_task(this->master, this->domain1, this->off_dig_out, this->bp_dig_out, this->domain1_pd);
-    }
-};
+		this->cyclic_task(this->master, this->domain1, this->off_dig_out,
+				this->bp_dig_out, this->domain1_pd);
+	}
+}
+;
 
 /*****************************************************************************/
 
-void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, unsigned int *off_dig_out,
-		  unsigned int *bp_dig_out, uint8_t *domain1_pd) {
+void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1,
+		unsigned int *off_dig_out, unsigned int *bp_dig_out,
+		uint8_t *domain1_pd) {
+
+	//cout << "cyclic_task::\n";
 
 	// receive process data
 	ecrt_master_receive(master);
@@ -133,55 +145,59 @@ void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, unsigned 
 	// check process data state (optional)
 	//check_domain1_state();
 
-	if (counter) {
-		counter--;
-	} else { // do this at 1 Hz
+	counter = FREQUENCY / 10;
+	// calculate new process data
+	blink = !blink;
 
-		counter = FREQUENCY / 10;
-		// calculate new process data
-		blink = !blink;
+	// check for master state (optional)
+	//check_master_state();
 
-		// check for master state (optional)
-		//check_master_state();
+	// check for islave configuration state(s) (optional)
 
-		// check for islave configuration state(s) (optional)
+	//check_slave_config_states();
 
-		//check_slave_config_states();
-
-
-		if (terminateFlg) {
-			std::cout << "terminating thread";
-			std::terminate();
-			return;
-		}
-
-
-		int si = 0;
-		for (si = 0; si < 1; si++) {
-			/*
-			 int i;
-			 for (i=0; i<tmt_ec_slave[si].pdo_entry_length; i++) {
-			 // this is where the case statements will be depending on field length of the PDO entry
-			 EC_WRITE_BIT(domain1_pd + tmt_ec_slave[si].domain_offset[i], tmt_ec_slave[si].domain_bit_pos[i], blink ? 0x1 : 0x0);
-			 }
-			 */
-
-
-			EC_WRITE_BIT(domain1_pd + off_dig_out[0], bp_dig_out[0],
-					blink ? 0x1 : 0x0);
-			EC_WRITE_BIT(domain1_pd + off_dig_out[1], bp_dig_out[1],
-					blink ? 0x0 : 0x1);
-			EC_WRITE_BIT(domain1_pd + off_dig_out[2], bp_dig_out[2],
-					blink ? 0x0 : 0x1);
-			EC_WRITE_BIT(domain1_pd + off_dig_out[3], bp_dig_out[3],
-					blink ? 0x1 : 0x0);
-
-		}
+	if (terminateFlg) {
+		std::cout << "terminating thread";
+		std::terminate();
+		return;
 	}
 
+	//int si = 0;
+	//for (si = 0; si < 1; si++) {
+	/*
+	 int i;
+	 for (i=0; i<tmt_ec_slave[si].pdo_entry_length; i++) {
+	 // this is where the case statements will be depending on field length of the PDO entry
+	 EC_WRITE_BIT(domain1_pd + tmt_ec_slave[si].domain_offset[i], tmt_ec_slave[si].domain_bit_pos[i], blink ? 0x1 : 0x0);
+	 }
+	 */
+
+	//cout << "cyclic_task::commandQueue isEmpty =  >>" << CommandQueue::instance()->isEmpty() << "<</n";
+
+	while (!CommandQueue::instance()->isEmpty()) {
+
+		PdoEntryValue pdoEntryValue = CommandQueue::instance()->getNext();
+		int index = pdoEntryValue.pdoEntryIndex;
+
+		cout << "value = " << pdoEntryValue.entryValue;
+
+		EC_WRITE_BIT(domain1_pd + off_dig_out[index], bp_dig_out[index], pdoEntryValue.entryValue);
+		EC_WRITE_BIT(domain1_pd + off_dig_out[1], bp_dig_out[1], pdoEntryValue.entryValue ? 0x0 : 0x1);
+
+	}
+	/*
+	 EC_WRITE_BIT(domain1_pd + off_dig_out[1], bp_dig_out[1],
+	 blink ? 0x0 : 0x1);
+	 EC_WRITE_BIT(domain1_pd + off_dig_out[2], bp_dig_out[2],
+	 blink ? 0x0 : 0x1);
+	 EC_WRITE_BIT(domain1_pd + off_dig_out[3], bp_dig_out[3],
+	 blink ? 0x1 : 0x0);
+	 */
+	//}
 
 	// send process data
 	ecrt_domain_queue(domain1);
 	ecrt_master_send(master);
-};
+}
+;
 
