@@ -17,9 +17,10 @@ int main() {
 
 	EtherCatServer etherCatServer = EtherCatServer();
 
-	etherCatServer.configServer("TODO: config filename here");
+	etherCatServer.configServer("/home/smichaels/git/ethercat-demo/test/test.xml");
 
-	printf("about to start server");
+	cout << "about to start server";
+
 
 	etherCatServer.startServer();
 
@@ -43,6 +44,7 @@ int main() {
 	etherCatServer.stopServer();
 
 	usleep(3000000);
+
 
 	std::cout << "End";
 }

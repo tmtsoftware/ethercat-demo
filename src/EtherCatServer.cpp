@@ -1,10 +1,13 @@
 #include <iostream>
+#include <iomanip>
 #include "ecrt.h"
 #include "TmtEcStructs.h"
 #include "temp.h"
 #include <string>
 #include <queue>
 #include <vector>
+#include "tinystr.h"
+#include "tinyxml.h"
 #include "PdoEntryCache.h"
 #include "CommandQueue.h"
 #include "CyclicMotor.h"
@@ -21,6 +24,7 @@
 #include <unistd.h>
 
 #include <thread>
+
 
 using namespace std;
 
@@ -131,12 +135,19 @@ void EtherCatServer::stopServer() {
 
 int EtherCatServer::configServer(string configFile) {
 
+
   // 1. Configure the system
   //vector<SlaveConfig> slaveConfigList = configLoader.loadConfiguration();
 
   master = ecrt_request_master(0);
    if (!master)
        return -1;
+
+
+   // load up the configuration
+
+   vector<SlaveConfig> slaveConfigList = configLoader.loadConfiguration(configFile);
+
 
    domain1 = ecrt_master_create_domain(master);
    if (!domain1)
@@ -197,6 +208,9 @@ void EtherCatServer::setParameterValue(string deviceName, string parameterName, 
 		pdoEntryValue.entryValue = value;
 		CommandQueue::instance()->addToQueue(pdoEntryValue);
 	}
+
+
+
 
 
 };

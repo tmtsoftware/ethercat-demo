@@ -12,7 +12,7 @@
 
 // structure to hold all slave info
 typedef struct {
-    char *name;
+    const char *name;
     unsigned int vendor_id;
     unsigned int product_code;
     unsigned int alias;
