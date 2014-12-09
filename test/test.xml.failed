@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<EtherCATInfoList>
+  <EtherCATInfo>
+    <!-- Slave 1 -->
+    <Vendor>
+      <Id>2</Id>
+    </Vendor>
+    <Descriptions>
+      <Devices>
+        <Device>
+          <Type ProductCode="#x04e43052" RevisionNo="#x00120000">EL1252</Type>
+          <Name><![CDATA[EL1252 2K. Fast Dig. Eingang 24V, 1�s, DC Latch]]></Name>
+          <Sm Enable="1" StartAddress="#x1000" ControlByte="#x22" DefaultSize="1" />
+          <Sm Enable="4" StartAddress="#x9ae" ControlByte="#x0" DefaultSize="0" />
+          <Sm Enable="4" StartAddress="#x910" ControlByte="#x0" DefaultSize="0" />
+          <TxPdo Sm="0" Fixed="1" Mandatory="1">
+            <Index>#x1a00</Index>
+            <Name>Channel 1</Name>
+            <Entry>
+              <Index>#x6000</Index>
+              <SubIndex>1</SubIndex>
+              <BitLen>1</BitLen>
+              <Name>Input</Name>
+              <DataType>BOOL</DataType>
+            </Entry>
+          </TxPdo>
+          <TxPdo Sm="0" Fixed="1" Mandatory="1">
+            <Index>#x1a01</Index>
+            <Name>Channel 2</Name>
+            <Entry>
+              <Index>#x6000</Index>
+              <SubIndex>2</SubIndex>
+              <BitLen>1</BitLen>
+              <Name>Input</Name>
+              <DataType>BOOL</DataType>
+            </Entry>
+            <Entry>
+              <Index>#x0000</Index>
+              <BitLen>6</BitLen>
+            </Entry>
+          </TxPdo>
+          <TxPdo Sm="0" Fixed="1" Mandatory="1">
+            <Index>#x1a02</Index>
+            <Name>Reserved</Name>
+          </TxPdo>
+          <TxPdo Sm="1" Fixed="1" Mandatory="1">
+            <Index>#x1a13</Index>
+            <Name>Latch</Name>
+            <Entry>
+              <Index>#x1d09</Index>
+              <SubIndex>174</SubIndex>
+              <BitLen>8</BitLen>
+              <Name>Status1</Name>
+              <DataType>UINT8</DataType>
+            </Entry>
+          </TxPdo>
+        </Device>
+      </Devices>
+    </Descriptions>
+  </EtherCATInfo>
+
+  
+</EtherCATInfoList>

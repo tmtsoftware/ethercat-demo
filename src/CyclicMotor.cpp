@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include "ecrt.h"
 #include <queue>
+#include <vector>
+#include "PdoEntry.h"
+#include "Pdo.h"
+#include "SyncManager.h"
+#include "SlaveConfig.h"
 #include "TmtEcStructs.h"
 #include "temp.h"
 #include "CommandQueue.h"
@@ -35,6 +40,19 @@ CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1,
 
 }
 ;
+
+CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1, uint8_t *domain1_pd, vector<SlaveConfig> slaves) {
+	this->master = master;
+	this->domain1 = domain1;
+	this->domain1_pd = domain1_pd;
+	this->slaves = slaves;
+
+	cout << "\nIN CyclicMotor::CyclicMotor(): " << slaves.at(4).pdoEntries.at(3).domainBitPos;
+	cout << "\nIN CyclicMotor::CyclicMotor(): " << this->slaves.at(4).pdoEntries.at(3).domainBitPos;
+
+
+};
+
 
 void CyclicMotor::start() {
 
@@ -110,8 +128,6 @@ void check_slave_config_states(void)
 
 void CyclicMotor::startup() {
 
-// everything below here is eventually in cyclic motor
-
 	printf("Started.\n");
 
 	while (1) {
@@ -124,8 +140,12 @@ void CyclicMotor::startup() {
 		printf("%u.%03u\n", t.tv_sec, t.tv_usec);
 #endif
 
-		this->cyclic_task(this->master, this->domain1, this->off_dig_out,
-				this->bp_dig_out, this->domain1_pd);
+#if ENABLE_NEW_RUN_CODE
+		this->cyclic_task(this->master, this->domain1, this->domain1_pd, this->slaves);
+#else
+		this->cyclic_task(this->master, this->domain1, this->off_dig_out, this->bp_dig_out, this->domain1_pd);
+#endif
+
 	}
 }
 ;
@@ -179,7 +199,8 @@ void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1,
 		PdoEntryValue pdoEntryValue = CommandQueue::instance()->getNext();
 		int index = pdoEntryValue.pdoEntryIndex;
 
-		cout << "value = " << pdoEntryValue.entryValue;
+		cout << "\nvalue = " << pdoEntryValue.entryValue << ", " << "offset = " << off_dig_out[index] << ", bitpos = " << bp_dig_out[index];
+		cout << "\nvalue = " << pdoEntryValue.entryValue << ", " << "offset = " << off_dig_out[1] << ", bitpos = " << bp_dig_out[1];
 
 		EC_WRITE_BIT(domain1_pd + off_dig_out[index], bp_dig_out[index], pdoEntryValue.entryValue);
 		EC_WRITE_BIT(domain1_pd + off_dig_out[1], bp_dig_out[1], pdoEntryValue.entryValue ? 0x0 : 0x1);
@@ -201,3 +222,59 @@ void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1,
 }
 ;
 
+void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, uint8_t *domain1_pd, vector<SlaveConfig> slaves) {
+
+	//cout << "cyclic_task::\n";
+
+	// receive process data
+	ecrt_master_receive(master);
+	ecrt_domain_process(domain1);
+
+	// check process data state (optional)
+	//check_domain1_state();
+
+	counter = FREQUENCY / 10;
+	// calculate new process data
+	blink = !blink;
+
+	// check for master state (optional)
+	//check_master_state();
+
+	// check for islave configuration state(s) (optional)
+
+	//check_slave_config_states();
+
+	if (terminateFlg) {
+		std::cout << "terminating thread";
+		std::terminate();
+		return;
+	}
+
+	// For now, only loop over slave #4
+	for (int si = 4; si < 5; si++) {
+
+		SlaveConfig slaveConfig = slaves.at(si);
+
+		//cout << "cyclic_task::commandQueue isEmpty =  >>" << CommandQueue::instance()->isEmpty() << "<</n";
+
+		while (!CommandQueue::instance()->isEmpty()) {
+
+			PdoEntryValue pdoEntryValue = CommandQueue::instance()->getNext();
+			int index = pdoEntryValue.pdoEntryIndex;
+
+			PdoEntry pdoEntry = slaveConfig.pdoEntries.at(index);
+
+			cout << "\nvalue = " << pdoEntryValue.entryValue << ", " << "offset = " << pdoEntry.domainOffset << ", bitpos = " << pdoEntry.domainBitPos;
+
+
+			EC_WRITE_BIT(domain1_pd + pdoEntry.domainOffset, pdoEntry.domainBitPos, pdoEntryValue.entryValue);
+
+		}
+
+	}
+
+	// send process data
+	ecrt_domain_queue(domain1);
+	ecrt_master_send(master);
+}
+;

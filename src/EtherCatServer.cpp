@@ -8,6 +8,10 @@
 #include <vector>
 #include "tinystr.h"
 #include "tinyxml.h"
+#include "PdoEntry.h"
+#include "Pdo.h"
+#include "SyncManager.h"
+#include "SlaveConfig.h"
 #include "PdoEntryCache.h"
 #include "CommandQueue.h"
 #include "CyclicMotor.h"
@@ -60,7 +64,10 @@ static ec_slave_config_state_t sc_ana_in_state = {};
 static unsigned int sig_alarms = 0;
 static unsigned int user_alarms = 0;
 
+static vector<SlaveConfig> slaves;
+
 /****************************************************************************/
+
 
 
 // TODO: this could be in an include file designating the item
@@ -97,7 +104,7 @@ ec_sync_info_t slave_1_syncs[] = {
 
 tmt_ec_slave_t tmt_ec_slave[] = {
 
-{"DigitalOut",
+{NULL,
 0x00000002,
 0x089a3052,
 1111,
@@ -109,6 +116,7 @@ slave_1_pdos,
 slave_1_pdo_entries,
 {"Channel 1 Output", "Channel 1 TriState", "Channel 2 Output", "Channel 2 TriState"},
 4,
+NULL, NULL, NULL,
 },
 };
 
@@ -123,8 +131,13 @@ EtherCatServer::EtherCatServer() {
 
 void EtherCatServer::startServer() {
 
+#if ENABLE_NEW_RUN_CODE
 
+	cyclicMotor = CyclicMotor(master,  domain1, domain1_pd, slaves);
+
+#else
 	cyclicMotor = CyclicMotor(master,  domain1, off_dig_out, bp_dig_out, domain1_pd);
+#endif
 
 	cyclicMotor.start();
 };
@@ -137,7 +150,6 @@ int EtherCatServer::configServer(string configFile) {
 
 
   // 1. Configure the system
-  //vector<SlaveConfig> slaveConfigList = configLoader.loadConfiguration();
 
   master = ecrt_request_master(0);
    if (!master)
@@ -146,16 +158,22 @@ int EtherCatServer::configServer(string configFile) {
 
    // load up the configuration
 
-   vector<SlaveConfig> slaveConfigList = configLoader.loadConfiguration(configFile);
-
+   slaves = configLoader.loadConfiguration(configFile);
+   cout << "\nIN EtherCatServer::configServer() 1: " << slaves.at(4).pdoEntries.at(3).domainBitPos;
 
    domain1 = ecrt_master_create_domain(master);
    if (!domain1)
        return -1;
 
   // load and apply configurations
-  ConfigLoader configLoader = ConfigLoader();
+
+#if ENABLE_NEW_CONFIG_CODE
+  configLoader.loadConfiguration(master, domain1, &slaves);
+#else
   configLoader.loadConfiguration(master, tmt_ec_slave, domain1, off_dig_out, bp_dig_out);
+#endif
+
+
 
   printf("Activating master...\n");
   if (ecrt_master_activate(master))
@@ -196,20 +214,61 @@ string EtherCatServer::getParameterValue(string deviceName, string parameterName
 void EtherCatServer::setParameterValue(string deviceName, string parameterName, int value) {
 	// TEST ONLY - just use the first device
 
-	if (parameterName.compare("parameter1")) {
+#if ENABLE_NEW_RUN_CODE
+
+	if (parameterName.compare("Channel 1::Output") == 0) {
 		PdoEntryValue pdoEntryValue = PdoEntryValue();
 		pdoEntryValue.pdoEntryIndex = 0;
 		pdoEntryValue.entryValue = value;
 		CommandQueue::instance()->addToQueue(pdoEntryValue);
+		cout << "\nChannel 1::Output added to queue";
 	}
-	if (parameterName.compare("parameter2")) {
+
+	if (parameterName.compare("Channel 1::TriState") == 0) {
+		PdoEntryValue pdoEntryValue = PdoEntryValue();
+		pdoEntryValue.pdoEntryIndex = 1;
+		pdoEntryValue.entryValue = value;
+		CommandQueue::instance()->addToQueue(pdoEntryValue);
+		cout << "\nChannel 1::TriState added to queue";
+	}
+
+	if (parameterName.compare("Channel 2::Output") == 0) {
 		PdoEntryValue pdoEntryValue = PdoEntryValue();
 		pdoEntryValue.pdoEntryIndex = 2;
 		pdoEntryValue.entryValue = value;
 		CommandQueue::instance()->addToQueue(pdoEntryValue);
+		cout << "\nChannel 2::Output added to queue";
+
 	}
 
+	if (parameterName.compare("Channel 2::TriState") == 0) {
+		PdoEntryValue pdoEntryValue = PdoEntryValue();
+		pdoEntryValue.pdoEntryIndex = 3;
+		pdoEntryValue.entryValue = value;
+		CommandQueue::instance()->addToQueue(pdoEntryValue);
+		cout << "\nChannel 2::TriState added to queue";
 
+	}
+
+#else
+
+	if (parameterName.compare("parameter1") == 0) {
+		PdoEntryValue pdoEntryValue1 = PdoEntryValue();
+		pdoEntryValue1.pdoEntryIndex = 0;
+		pdoEntryValue1.entryValue = value;
+		CommandQueue::instance()->addToQueue(pdoEntryValue1);
+		cout << "\nparameter1 added to queue";
+	}
+
+	if (parameterName.compare("parameter2") == 0) {
+		PdoEntryValue pdoEntryValue = PdoEntryValue();
+		pdoEntryValue.pdoEntryIndex = 2;
+		pdoEntryValue.entryValue = value;
+		CommandQueue::instance()->addToQueue(pdoEntryValue);
+		cout << "\nparameter2 added to queue";
+	}
+
+#endif
 
 
 

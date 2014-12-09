@@ -4,11 +4,6 @@ struct PdoEntryValue {
   unsigned int entryValue;
 };
 
-struct SlaveConfig {
-  int slaveId;
-  PdoEntryValue pdoEntryValue;
-};
-
 struct Device {
   int deviceId;
   int slaveId;

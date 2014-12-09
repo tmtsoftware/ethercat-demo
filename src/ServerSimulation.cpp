@@ -2,9 +2,15 @@
 #include "ecrt.h"
 #include "TmtEcStructs.h"
 #include "temp.h"
+#include "tinystr.h"
+#include "tinyxml.h"
 #include <string>
 #include <vector>
 #include <queue>
+#include "PdoEntry.h"
+#include "Pdo.h"
+#include "SyncManager.h"
+#include "SlaveConfig.h"
 #include "PdoEntryCache.h"
 #include "CommandQueue.h"
 #include "CyclicMotor.h"
@@ -24,20 +30,32 @@ int main() {
 
 	etherCatServer.startServer();
 
-
-
 	// this simulates the OPC/UA server loop
 	int i;
 	for (i=0; i<400; i++) {
 
 		usleep(500000);
 
+		cout << "\nServerSimulation:: setting parameter values";
+
+#if ENABLE_NEW_RUN_CODE
+
+		 etherCatServer.setParameterValue("device1", "Channel 1::Output", i % 2);
+		 etherCatServer.setParameterValue("device1", "Channel 1::TriState", (i % 2) ? 0 : 1);
+
+		 etherCatServer.setParameterValue("device1", "Channel 2::Output", (i % 2) ? 0 : 1);
+		 etherCatServer.setParameterValue("device1", "Channel 2::TriState", i % 2);
+
+#else
 
 		etherCatServer.setParameterValue("device1", "parameter1", i % 2);
 
 		etherCatServer.setParameterValue("device1", "parameter2", (i % 2) ? 0 : 1);
 
-		std::cout << "Waited 500 ms, value = " << (i % 2) << "\n";
+#endif
+		cout << "\nServerSimulation:: setting parameter values";
+
+		std::cout << "\nWaited 500 ms, value = " << (i % 2) << "\n";
 	}
 
 	std::cout << "Stopping Server";

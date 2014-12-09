@@ -10,7 +10,7 @@ INCS= -I$(ETHER_LOC)/include -I../include -I$(ETHER_LOC)/tool
 LOPTS=-Wl,-rpath=$(ETHER_LOC)/lib
 LIBS=-L$(ETHER_LOC)/lib -lethercat -lpthread
 
-ectest: ServerSimulation.o EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o 
+ectest: ServerSimulation.o EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o SyncManager.o Pdo.o PdoEntry.o SlaveConfig.o tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o 
 	$(CC) $(LOPTS) $(LIBS) -o $@ $^
 
 ServerSimulation.o: ServerSimulation.cpp
@@ -31,6 +31,18 @@ PdoEntryCache.o: PdoEntryCache.cpp
 NameMap.o: NameMap.cpp
 	$(CC) $(CFLAGS) $(INCS) $<
 
+SyncManager.o: SyncManager.cpp
+	$(CC) $(CFLAGS) $(INCS) $<
+
+Pdo.o: Pdo.cpp
+	$(CC) $(CFLAGS) $(INCS) $<
+
+PdoEntry.o: PdoEntry.cpp
+	$(CC) $(CFLAGS) $(INCS) $<
+
+SlaveConfig.o: SlaveConfig.cpp
+	$(CC) $(CFLAGS) $(INCS) $<
+
 CyclicMotor.o: CyclicMotor.cpp
 	$(CC) $(CFLAGS) $(INCS) $<
 
@@ -47,7 +59,7 @@ tinyxmlparser.o: tinyxmlparser.cpp
 	$(CC) $(CFLAGS) $(INCS) $<
 
 clean:
-	rm ectest.o ectest
+	rm *.o ectest
 
 touch:
 	touch ectest.c
