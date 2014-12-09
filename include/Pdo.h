@@ -2,7 +2,7 @@ using namespace std;
 
 class Pdo {
  
-  public: Pdo(string name, int index, int n_entries);
+public: Pdo(string name, int index, int n_entries);
 
   public: string name;
   public: uint16_t index;

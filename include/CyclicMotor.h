@@ -3,8 +3,6 @@ class CyclicMotor {
  
 private: ec_master_t *master;
 private: ec_domain *domain1;
-private: unsigned int *off_dig_out;
-private: unsigned int *bp_dig_out;
 private: uint8_t *domain1_pd;
 private: vector<SlaveConfig> slaves;
 

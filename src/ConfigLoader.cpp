@@ -8,6 +8,7 @@
 #include "TmtEcStructs.h"
 #include <string>
 #include <vector>
+#include <map>
 
 #include "PdoEntry.h"
 #include "Pdo.h"
@@ -18,54 +19,9 @@
 using namespace std;
 
 ConfigLoader::ConfigLoader() {
-}
-;
-
-void ConfigLoader::loadConfiguration(ec_master_t *master,
-		tmt_ec_slave_t *tmt_ec_slave, ec_domain *domain1,
-		unsigned int *off_dig_out, unsigned int *bp_dig_out) {
-
-	// configure all slaves and domain for each pdo entry of each slave
-	ec_slave_config_t *sc;
-
-	int si = 0;
-	for (si = 0; si < 1; si++) {
-
-		// Create configuration for bus coupler
-		sc = ecrt_master_slave_config(master, tmt_ec_slave[si].alias,
-				tmt_ec_slave[si].pos, tmt_ec_slave[si].vendor_id,
-				tmt_ec_slave[si].product_code);
-
-		if (!sc)
-			throw -1;
-
-		printf("Configuring PDOs...\n");
-
-		// TEST ONLY
-		ec_sync_info_t *sync = tmt_ec_slave[si].syncs;
-		//printSyncs(1, sync);
-
-
-
-		if (ecrt_slave_config_pdos(sc, 6, tmt_ec_slave[si].syncs)) {
-			fprintf(stderr, "Failed to configure PDOs.\n");
-			throw -1;
-		}
-
-		// PDO Entry Domain Registration
-
-		ec_pdo_entry_info_t *pdo_entries = tmt_ec_slave[si].pdo_entries;
-		for (int i = 0; i < tmt_ec_slave[si].pdo_entry_length; i++) {
-
-			off_dig_out[i] = ecrt_slave_config_reg_pdo_entry(sc,
-					pdo_entries[i].index, pdo_entries[i].subindex, domain1,
-					&bp_dig_out[i]);
-		}
-
-	}
 };
 
-void ConfigLoader::loadConfiguration(ec_master_t *master, ec_domain *domain1, vector<SlaveConfig> *slaveConfigVector) {
+void ConfigLoader::applyConfiguration(ec_master_t *master, ec_domain *domain1, vector<SlaveConfig> *slaveConfigVector) {
 	// configure all slaves and domain for each pdo entry of each slave
 
 	cout << "\ngot here::" << slaveConfigVector->size() << "\n";
@@ -155,8 +111,6 @@ void ConfigLoader::loadConfiguration(ec_master_t *master, ec_domain *domain1, ve
 
 		}
 
-
-
 	}
 	printf("\n");
 }
@@ -178,9 +132,6 @@ vector<SlaveConfig> ConfigLoader::loadConfiguration(string configFile) {
 	printf("\n%s:\n", configFile.c_str());
 
 	TiXmlNode* root = doc.FirstChild("EtherCATInfoList");
-
-	// initialize array with element for each slave
-	tmt_ec_slave_t* tmt_ec_slave = new tmt_ec_slave_t[countChildren(root)];
 
 	// loop over slaves
 	int slaveIndex = -1;
@@ -220,24 +171,19 @@ vector<SlaveConfig> ConfigLoader::loadConfiguration(string configFile) {
 
 		// fill the structure with parsed values
 
-		tmt_ec_slave[slaveIndex].name = new string(nameText->Value());
+		string *name = new string(nameText->Value());
 
-		tmt_ec_slave[slaveIndex].product_code = hexCharToInt(typeElem->Attribute("ProductCode"));
-		tmt_ec_slave[slaveIndex].pos = slaveIndex;
-		tmt_ec_slave[slaveIndex].vendor_id = charToInt(idValueText->Value());
-		tmt_ec_slave[slaveIndex].alias = 0; // FIXME: this part requires another tool to set up
+		unsigned int product_code = hexCharToInt(typeElem->Attribute("ProductCode"));
+		unsigned int pos = slaveIndex;
+		unsigned int vendor_id = charToInt(idValueText->Value());
+		unsigned int alias = 0; // FIXME: this part requires another tool to set up
 
 		// loop over a slave's Sync Managers
 		// the order is important in linking them to the PDOs
 
-		// also need to create this for the ecrt structs
-		ec_sync_info_t* ecrt_syncs = new ec_sync_info_t[countChildren(deviceElem, "Sm")];
+		// create slave config
 
-		// add both sync types to slave structure
-		tmt_ec_slave[slaveIndex].syncs = ecrt_syncs;
-
-		SlaveConfig *slaveConfig = new SlaveConfig(*(tmt_ec_slave[slaveIndex].name), tmt_ec_slave[slaveIndex].vendor_id,
-				tmt_ec_slave[slaveIndex].product_code, tmt_ec_slave[slaveIndex].alias, tmt_ec_slave[slaveIndex].pos);
+		SlaveConfig *slaveConfig = new SlaveConfig(*name, vendor_id, product_code, alias, pos);
 
 		vector<Pdo> slavePdoVector;
 		vector<PdoEntry> slavePdoEntryVector;
@@ -265,17 +211,12 @@ vector<SlaveConfig> ConfigLoader::loadConfiguration(string configFile) {
 			unsigned int n_pdos = (txCount > 0) ? txCount : rxCount;
 			ec_watchdog_mode_t watchdog_mode = (txCount > 0) ? EC_WD_DISABLE : EC_WD_ENABLE;
 
-			// duplicate values into ecrt sync structure
-			ecrt_syncs[i].dir = dir;
-			ecrt_syncs[i].index = index;
-			ecrt_syncs[i].n_pdos = n_pdos;
-			ecrt_syncs[i].watchdog_mode = watchdog_mode;
 
 			vector<Pdo> pdos;
 			if (txCount > 0) {
-				pdos = loadPdoInfo("TxPdo", deviceElem, i, &ecrt_syncs[i]);
+				pdos = loadPdoInfo("TxPdo", deviceElem, i, n_pdos);
 			} else {
-				pdos = loadPdoInfo("RxPdo", deviceElem, i, &ecrt_syncs[i]);
+				pdos = loadPdoInfo("RxPdo", deviceElem, i, n_pdos);
 			}
 
 			SyncManager *syncManager = new SyncManager(index, dir, watchdog_mode);
@@ -299,20 +240,15 @@ vector<SlaveConfig> ConfigLoader::loadConfiguration(string configFile) {
 			    	slaveConfig->pdoEntries.push_back(pdoEntry);
 
 			    	cout << pdoEntry.entryName << ", ";
-
 			    }
-
 			}
 			cout << "\n";
-
 
 			slaveSyncManagerVector.push_back(*syncManager);
 		}
 
 		// add completed sync tree structs to the slave config
 		slaveConfig->syncs = slaveSyncManagerVector;
-
-
 
 		slaveConfigList.push_back(*slaveConfig);
 	}
@@ -322,24 +258,19 @@ vector<SlaveConfig> ConfigLoader::loadConfiguration(string configFile) {
 
 }
 
-vector<Pdo> ConfigLoader::loadPdoInfo(const char* type, TiXmlElement *deviceElem,
-		int smIndex, ec_sync_info_t* ecrt_sync) {
+vector<Pdo> ConfigLoader::loadPdoInfo(const char* type, TiXmlElement *deviceElem, int smIndex, int n_pdos) {
 
 // allocate the tmt pdos array - new
 
 	vector<Pdo> pdo_vector;
 
-	tmt_ec_pdo* slave_pdos = new tmt_ec_pdo[ecrt_sync->n_pdos];
-	ec_pdo_info_t* ecrt_pdos = new ec_pdo_info_t[ecrt_sync->n_pdos];
 
-	cout << "\nnumber of pdos " << ecrt_sync->n_pdos << "\n";
+	cout << "\nnumber of pdos " << n_pdos << "\n";
 
-	if (ecrt_sync->n_pdos == 0) {
+	if (n_pdos == 0) {
 		return pdo_vector;
 	}
 
-// add to sync manager structure
-	ecrt_sync->pdos = ecrt_pdos;
 
 // loop over a slave's PDOs
 	TiXmlNode* pdoChild = 0;
@@ -348,17 +279,10 @@ vector<Pdo> ConfigLoader::loadPdoInfo(const char* type, TiXmlElement *deviceElem
 
 		cout << "\n\nPdo " << j++ << "\n";
 
-		//tmt_ec_pdo slave_pdo = slave_pdos[j];
-
-		ec_pdo_info_t ecrt_pdo = ecrt_pdos[j];
-
 		TiXmlElement* pdoElem = pdoChild->ToElement();
 
 		int syncMgr = charToInt(pdoElem->Attribute("Sm"));
 		if (syncMgr != smIndex) continue;
-
-
-		(ecrt_sync->n_pdos)++;  // increment the number of pdos for this sync mgr
 
 		cout << "\n Sync Manager = " << pdoElem->Attribute("Sm");
 		cout << "\n fixed = " << pdoElem->Attribute("Fixed");
@@ -384,16 +308,6 @@ vector<Pdo> ConfigLoader::loadPdoInfo(const char* type, TiXmlElement *deviceElem
 		int pdoEntryCount = countChildren(pdoElem, "Entry");
 		int n_entries = pdoEntryCount;
 
-		// copy values to ecrt structure
-		ecrt_pdo.index = index;
-		ecrt_pdo.n_entries = pdoEntryCount;
-
-		// allocate tmt and ecrt pdo entries structures
-		tmt_ec_pdo_entry* pdo_entries = new tmt_ec_pdo_entry[pdoEntryCount];
-		ec_pdo_entry_info_t* ecrt_pdo_entries = new ec_pdo_entry_info_t[pdoEntryCount];
-
-		//pdo->pdo_entries = pdo_entries;
-		ecrt_pdo.entries = ecrt_pdo_entries;
 
 		// save this pdo
 		Pdo *pdo = new Pdo(*name, index, n_entries);
@@ -411,9 +325,6 @@ vector<Pdo> ConfigLoader::loadPdoInfo(const char* type, TiXmlElement *deviceElem
 
 			cout << "\n-----------------\n";
 			cout << "Pdo Entry " << k++ << "\n";
-
-			//tmt_ec_pdo_entry pdo_entry = pdo_entries[k]; // tmt struct
-			ec_pdo_entry_info_t ecrt_pdo_entry = ecrt_pdo_entries[k];  // ecrt struct
 
 
 			TiXmlText* indexText = pdoEntryChild->FirstChild("Index")->FirstChild()->ToText();
@@ -455,12 +366,6 @@ vector<Pdo> ConfigLoader::loadPdoInfo(const char* type, TiXmlElement *deviceElem
 			} else {
 				cout << "\n data type = " << "None";
 			}
-
-			// fill the ecrt structure
-			ecrt_pdo_entry.index = index;
-			ecrt_pdo_entry.subindex = subindex;
-			ecrt_pdo_entry.bit_length = bit_length;
-
 
 			// save this as pdoEntry
 			PdoEntry *pdoEntry = new PdoEntry(*entry_name, pdo->name, index, subindex, bit_length);
