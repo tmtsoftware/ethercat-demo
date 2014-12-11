@@ -1,9 +1,13 @@
+#ifndef INCLUDE_COMMANDQUEUE_H_
+#define INCLUDE_COMMANDQUEUE_H_
 
-using namespace std;
+#include <queue>
+
+#include "TmtEcStructs.h"
 
 class CommandQueue {
  
-  public: queue<PdoEntryValue> cmdQueue;
+  public: std::queue<PdoEntryValue> cmdQueue;
   private: CommandQueue();
 
   public: static CommandQueue* instance();
@@ -15,3 +19,4 @@ class CommandQueue {
   public: bool isEmpty();
 };
 
+#endif /* INCLUDE_COMMANDQUEUE_H_ */

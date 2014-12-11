@@ -1,13 +1,20 @@
-using namespace std;
+#ifndef INCLUDE_PDO_H_
+#define INCLUDE_PDO_H_
+
+#include <string>
+#include <vector>
+
+#include "PdoEntry.h"
 
 class Pdo {
  
-public: Pdo(string name, int index, int n_entries);
+public: Pdo(std::string name, int index, int n_entries);
 
-  public: string name;
+  public: std::string name;
   public: uint16_t index;
   public: unsigned int n_entries;
-  public: vector<PdoEntry> pdoEntries;
+  public: std::vector<PdoEntry> pdoEntries;
 
 };
 
+#endif /* INCLUDE_PDO_H_ */

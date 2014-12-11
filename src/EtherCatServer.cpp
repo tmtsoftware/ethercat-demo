@@ -1,37 +1,15 @@
+
 #include <iostream>
-#include <iomanip>
 #include "ecrt.h"
-#include "TmtEcStructs.h"
-#include "temp.h"
+
 #include <string>
-#include <queue>
 #include <vector>
-#include <map>
-#include "tinystr.h"
-#include "tinyxml.h"
-#include "PdoEntry.h"
-#include "Pdo.h"
-#include "SyncManager.h"
+#include "TmtEcStructs.h"
 #include "SlaveConfig.h"
-#include "PdoEntryCache.h"
 #include "CommandQueue.h"
-#include "CyclicMotor.h"
 #include "ConfigLoader.h"
+
 #include "EtherCatServer.h"
-
-#include <errno.h>
-#include <signal.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <thread>
-
-
-using namespace std;
 
 
 /****************************************************************************/
@@ -53,26 +31,10 @@ static ec_master_state_t master_state = {};
 static ec_domain_t *domain1 = NULL;
 static ec_domain_state_t domain1_state = {};
 
-static ec_slave_config_t *sc_ana_in = NULL;
-static ec_slave_config_state_t sc_ana_in_state = {};
 
-// Timer
-static unsigned int sig_alarms = 0;
-static unsigned int user_alarms = 0;
-
-static vector<SlaveConfig> slaves;
+static std::vector<SlaveConfig> slaves;
 
 /****************************************************************************/
-
-
-
-// TODO: this could be in an include file designating the item
-#define DigOutSlavePos 1111, 0
-
-
-/*****************************************************************************/
-
-
 
 EtherCatServer::EtherCatServer() {
   pdoEntryCache = PdoEntryCache();
@@ -91,7 +53,7 @@ void EtherCatServer::stopServer() {
 	cyclicMotor.stop();
 };
 
-int EtherCatServer::configServer(string configFile) {
+int EtherCatServer::configServer(std::string configFile) {
 
 
   // 1. Configure the system
@@ -103,7 +65,7 @@ int EtherCatServer::configServer(string configFile) {
 
    // load up the configuration
 
-   slaves = configLoader.loadConfiguration(configFile);
+   slaves = configLoader.loadConfiguration(master, configFile);
 
    domain1 = ecrt_master_create_domain(master);
    if (!domain1)
@@ -124,17 +86,17 @@ int EtherCatServer::configServer(string configFile) {
 
 };
 
-vector<string> EtherCatServer::getDeviceNames() {
-  vector<string> test;
+std::vector<std::string> EtherCatServer::getDeviceNames() {
+  std::vector<std::string> test;
   test.push_back("one");
   test.push_back("two");
   return test;
 };
 
 
-vector<string> EtherCatServer::getParameterNames(string deviceName) {
+std::vector<std::string> EtherCatServer::getParameterNames(std::string deviceName) {
  
-  vector<string> test;
+  std::vector<std::string> test;
   test.push_back(deviceName + "::one");
   test.push_back(deviceName + "::two");
   return test;
@@ -142,32 +104,45 @@ vector<string> EtherCatServer::getParameterNames(string deviceName) {
 
 // TODO: should this be templated (we need to learn about templating) to 
 // instead return 'int', 'float', etc??
-string EtherCatServer::getParameterValue(string deviceName, string parameterName) {
+std::string EtherCatServer::getParameterValue(std::string deviceName, std::string parameterName) {
  
   return deviceName + "::" + parameterName + "::" + "value";
 };
 
 // TODO: we need to template this for different types of value
-void EtherCatServer::setParameterValue(string deviceName, string parameterName, int value) {
+void EtherCatServer::setParameterValue(std::string deviceName, std::string parameterName, int value) {
+	setParameterValue(deviceName, 0, 0, parameterName, value);
+}
+
+void EtherCatServer::setParameterValue(unsigned int deviceAlias, int deviceOffset, std::string parameterName, int value) {
+	setParameterValue("", deviceAlias, deviceOffset, parameterName, value);
+}
+
+
+
+void EtherCatServer::setParameterValue(std::string deviceName, unsigned int alias, int pos, std::string parameterName, int value) {
 
 	// TODO: implement as a hashmap of slaves by name containing a hashmap of PdoEntries by fullName.
 
 	//cout << "setParameterValue:: slaves.size() = " << slaves.size();
 
-	for (int si=0; si<slaves.size(); si++) {
+	for (int si=0; si<(int)slaves.size(); si++) {
 
 
-		if (deviceName.compare(slaves.at(si).name) == 0) {
+		//std::cout << slaves.at(si).name << "::" << deviceName << "::" << alias;
 
-			for (int i=0; i<slaves.at(si).pdoEntries.size(); i++) {
+		if ((deviceName.empty() && (alias == slaves.at(si).alias || (alias == 0U && si == pos)))
+				|| (deviceName.compare(slaves.at(si).name) == 0 && (alias == 0U || alias == slaves.at(si).alias))) {
+
+			for (int i=0; i<(int)slaves.at(si).pdoEntries.size(); i++) {
 
 				if (parameterName.compare(slaves.at(si).pdoEntries.at(i).fullName) == 0) {
 					PdoEntryValue pdoEntryValue = PdoEntryValue();
 					pdoEntryValue.pdoEntryIndex = i;
 					pdoEntryValue.entryValue = value;
 					CommandQueue::instance()->addToQueue(pdoEntryValue);
-					cout << "\nslave = " << slaves.at(si).name;
-					cout << " ::: " << slaves.at(si).pdoEntries.at(i).fullName << " added to queue";
+					std::cout << "\nslave = " << slaves.at(si).name;
+					std::cout << " ::: " << slaves.at(si).pdoEntries.at(i).fullName << " added to queue";
 				}
 
 			}

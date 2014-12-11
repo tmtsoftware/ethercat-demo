@@ -1,4 +1,10 @@
-using namespace std;
+#ifndef INCLUDE_SYNCMANAGER_H_
+#define INCLUDE_SYNCMANAGER_H_
+
+#include <vector>
+
+#include "ecrt.h"
+#include "Pdo.h"
 
 class SyncManager {
  
@@ -7,7 +13,8 @@ class SyncManager {
   public: uint8_t index;
   public: ec_direction_t dir;
   public: ec_watchdog_mode_t watchdog_mode;
-  public: vector<Pdo> pdos;
+  public: std::vector<Pdo> pdos;
 
 };
 
+#endif /* INCLUDE_SYNCMANAGER_H_ */

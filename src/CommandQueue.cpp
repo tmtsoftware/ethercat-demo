@@ -1,9 +1,9 @@
 #include <iostream>
-#include "ecrt.h"
+
 #include "TmtEcStructs.h"
 #include <queue>
 #include "CommandQueue.h"
-using namespace std;
+
 
 // Singleton pattern stuff
 
@@ -17,7 +17,7 @@ CommandQueue* CommandQueue::instance() {
 }
 
 CommandQueue::CommandQueue() {
-   cmdQueue = queue<PdoEntryValue>();
+   cmdQueue = std::queue<PdoEntryValue>();
 };
 
 // TODO: this class is not thread-safe.  We need to implement locking.

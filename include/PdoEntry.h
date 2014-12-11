@@ -1,11 +1,14 @@
-using namespace std;
+#ifndef INCLUDE_PDOENTRY_H_
+#define INCLUDE_PDOENTRY_H_
+
+#include <string>
 
 class PdoEntry {
  
-  public: PdoEntry(string entryName, string pdoName, int index, int subindex, int bitLength);
+  public: PdoEntry(std::string entryName, std::string pdoName, int index, int subindex, int bitLength);
 
-  public: string entryName;
-  public: string fullName;
+  public: std::string entryName;
+  public: std::string fullName;
   public: uint16_t index;
   public: uint8_t subindex;
   public: uint8_t bitLength;
@@ -14,3 +17,4 @@ class PdoEntry {
 
 };
 
+#endif /* INCLUDE_PDOENTRY_H_ */

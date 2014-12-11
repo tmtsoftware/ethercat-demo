@@ -10,10 +10,10 @@ INCS= -I$(ETHER_LOC)/include -I../include -I$(ETHER_LOC)/tool
 LOPTS=-Wl,-rpath=$(ETHER_LOC)/lib
 LIBS=-L$(ETHER_LOC)/lib -lethercat -lpthread
 
-ectest: ServerSimulation.o EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o SyncManager.o Pdo.o PdoEntry.o SlaveConfig.o tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o 
+ectest: UserExample.o EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o SyncManager.o Pdo.o PdoEntry.o SlaveConfig.o tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o 
 	$(CC) $(LOPTS) $(LIBS) -o $@ $^
 
-ServerSimulation.o: ServerSimulation.cpp
+UserExample.o: UserExample.cpp
 	$(CC) $(CFLAGS) $(INCS) $<
 
 EtherCatServer.o: EtherCatServer.cpp

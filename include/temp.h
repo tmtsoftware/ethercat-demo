@@ -10,6 +10,4 @@
 
 #define FREQUENCY 100
 
-using namespace std;
-
 #endif /* INCLUDE_TEMP_H_ */

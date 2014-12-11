@@ -8,11 +8,11 @@
 NameMap::NameMap() {
 };
 
-vector<Device> NameMap::getDevices() {
+std::vector<Device> NameMap::getDevices() {
 
   Device device;
 
-  vector<Device> deviceList;
+  std::vector<Device> deviceList;
 
   deviceList.push_back(device);
 
@@ -20,11 +20,11 @@ vector<Device> NameMap::getDevices() {
 
 };
  
-vector<Parameter> NameMap::getParameters(Device device) {
+std::vector<Parameter> NameMap::getParameters(Device device) {
 
   Parameter parameter;
 
-  vector<Parameter> parameterList;
+  std::vector<Parameter> parameterList;
 
   parameterList.push_back(parameter);
 
@@ -32,7 +32,7 @@ vector<Parameter> NameMap::getParameters(Device device) {
   
 };
 
-Parameter NameMap::getParameter(Device device, string parameterName) {
+Parameter NameMap::getParameter(Device device, std::string parameterName) {
   Parameter parameter;
 
   return parameter;
