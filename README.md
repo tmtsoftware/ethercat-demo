@@ -46,7 +46,8 @@ In the example, the alias is 1111 and the position is ignored.   If the alias is
 
 ##Design Overview
 
-
+![Design](/images/design.png)
+Format: ![Design Diagram](url)
 
 A user program provides the location of the configuration XML file.  This is passed to the EtherCatServer API, that in turn passes it to the ConfigLoader that loads the configuration, creating an internal data structure of SlaveConfig objects, that contain associated SyncManager objects, Pdo objects and PdoEntry objects.
 
