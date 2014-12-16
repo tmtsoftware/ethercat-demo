@@ -87,27 +87,76 @@ int EtherCatServer::configServer(std::string configFile) {
 };
 
 std::vector<std::string> EtherCatServer::getDeviceNames() {
-  std::vector<std::string> test;
-  test.push_back("one");
-  test.push_back("two");
-  return test;
+
+  std::vector<std::string> deviceNameList;
+  for (int si=0; si<(int)slaves.size(); si++) {
+	  deviceNameList.push_back(slaves.at(si).name);
+  }
+  return deviceNameList;
+
 };
 
-
+// FIXME - this does not work when two device names are the same
 std::vector<std::string> EtherCatServer::getParameterNames(std::string deviceName) {
  
-  std::vector<std::string> test;
-  test.push_back(deviceName + "::one");
-  test.push_back(deviceName + "::two");
-  return test;
+  std::vector<std::string> parameterNameList;
+    for (int si=0; si<(int)slaves.size(); si++) {
+		if (deviceName.compare(slaves.at(si).name) == 0) {
+    	  for (unsigned int i=0; i<slaves.at(si).pdoEntries.size(); i++) {
+        	parameterNameList.push_back(slaves.at(si).pdoEntries.at(i).fullName);
+    	  }
+		}
+	}
+  return parameterNameList;
+
 };
 
 // TODO: should this be templated (we need to learn about templating) to 
 // instead return 'int', 'float', etc??
-std::string EtherCatServer::getParameterValue(std::string deviceName, std::string parameterName) {
+int EtherCatServer::getParameterValue(std::string deviceName, std::string parameterName) {
  
-  return deviceName + "::" + parameterName + "::" + "value";
+  return getParameterValue(deviceName, 0, 0, parameterName);
 };
+
+int EtherCatServer::getParameterValue(unsigned int deviceAlias, int devicePosition, std::string parameterName) {
+	return getParameterValue("", deviceAlias, devicePosition, parameterName);
+}
+
+int EtherCatServer::getParameterValue(std::string deviceName, unsigned int alias, int pos, std::string parameterName) {
+
+	// determine server
+	int slaveIndex = -1;
+	int entryIndex = -1;
+	if (!deviceName.empty()) {
+		// TODO: this should be a hashmap
+		for (int si=0; si<(int)slaves.size(); si++) {
+			if (deviceName.compare(slaves.at(si).name) == 0) {
+				slaveIndex = si;
+			}
+		}
+	} else if (alias == 0) {
+		slaveIndex = pos;
+	} else {
+		// handle aliases
+		for (int si=0; si<(int)slaves.size(); si++) {
+			if (slaves.at(si).alias == alias) {
+				slaveIndex = si;
+			}
+		}
+
+	}
+
+	SlaveConfig slaveConfig = slaves.at(slaveIndex);
+	// TODO: should be a hashmap
+	for (int i=0; i<slaveConfig.pdoEntries.size(); i++) {
+		if (parameterName.compare(slaveConfig.pdoEntries.at(i).fullName) == 0) {
+			entryIndex = i;
+		}
+	}
+
+	std::cout << "\nslave, entry = " << slaveIndex << ", " << entryIndex;
+	return PdoEntryCache::instance()->getPdoEntryValue(slaveIndex, entryIndex);
+}
 
 // TODO: we need to template this for different types of value
 void EtherCatServer::setParameterValue(std::string deviceName, std::string parameterName, int value) {
@@ -139,10 +188,12 @@ void EtherCatServer::setParameterValue(std::string deviceName, unsigned int alia
 				if (parameterName.compare(slaves.at(si).pdoEntries.at(i).fullName) == 0) {
 					PdoEntryValue pdoEntryValue = PdoEntryValue();
 					pdoEntryValue.pdoEntryIndex = i;
+					pdoEntryValue.slaveIndex = si;
 					pdoEntryValue.entryValue = value;
 					CommandQueue::instance()->addToQueue(pdoEntryValue);
 					std::cout << "\nslave = " << slaves.at(si).name;
-					std::cout << " ::: " << slaves.at(si).pdoEntries.at(i).fullName << " added to queue";
+					std::cout << " ::: " << slaves.at(si).pdoEntries.at(i).fullName << ", value = " << pdoEntryValue.entryValue << " added to queue";
+
 				}
 
 			}

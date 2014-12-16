@@ -21,12 +21,12 @@ ConfigLoader::ConfigLoader() {
 void ConfigLoader::applyConfiguration(ec_master_t *master, ec_domain *domain1, std::vector<SlaveConfig> *slaveConfigVector) {
 	// configure all slaves and domain for each pdo entry of each slave
 
-	std::cout << "\ngot here::" << slaveConfigVector->size() << "\n";
+	//std::cout << "\ngot here::" << slaveConfigVector->size() << "\n";
 
 	ec_slave_config_t *sc;
 	for (unsigned int si = 0; si < slaveConfigVector->size(); si++) {
 
-		std::cout << "\nin loop: si = " << si << "\n";
+		//std::cout << "\nin loop: si = " << si << "\n";
 
 		SlaveConfig slaveConfig = slaveConfigVector->at(si);
 
@@ -146,7 +146,7 @@ void ConfigLoader::applyConfiguration(ec_master_t *master, ec_domain *domain1, s
 			slaveConfigVector->at(si).pdoEntries.at(i).domainOffset = offset;
 			slaveConfigVector->at(si).pdoEntries.at(i).domainBitPos = bitpos;
 
-			std::cout << std::hex << "\n" << slaveConfigVector->at(si).pdoEntries.at(i).domainOffset << "<>" << slaveConfigVector->at(si).pdoEntries.at(i).domainBitPos;
+			std::cout << std::hex << "\ndomain registration: offset = " << slaveConfigVector->at(si).pdoEntries.at(i).domainOffset << ", bit pos = " << slaveConfigVector->at(si).pdoEntries.at(i).domainBitPos;
 
 		}
 

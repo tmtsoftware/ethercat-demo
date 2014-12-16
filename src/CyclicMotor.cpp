@@ -10,16 +10,14 @@
 #include "TmtEcStructs.h"
 #include "temp.h"
 #include "CommandQueue.h"
+#include "PdoEntryCache.h"
 #include "CyclicMotor.h"
 
 
 #include <thread>
 
-using namespace std;
-
-static unsigned int counter = 0;
-static unsigned int blink = 0;
 static bool terminateFlg = false;
+static ec_domain_state_t domain1_state = {};
 
 
 // cyclic motor state
@@ -27,7 +25,7 @@ static bool terminateFlg = false;
 CyclicMotor::CyclicMotor() {
 };
 
-CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1, uint8_t *domain1_pd, vector<SlaveConfig> slaves) {
+CyclicMotor::CyclicMotor(ec_master_t *master, ec_domain *domain1, uint8_t *domain1_pd, std::vector<SlaveConfig> slaves) {
 	this->master = master;
 	this->domain1 = domain1;
 	this->domain1_pd = domain1_pd;
@@ -48,10 +46,10 @@ void CyclicMotor::stop() {
 	terminateFlg = true;
 };
 
-#if 0
+
 /*****************************************************************************/
 
-void check_domain1_state(void)
+void check_domain1_state(ec_domain *domain1)
 {
 	ec_domain_state_t ds;
 
@@ -66,7 +64,7 @@ void check_domain1_state(void)
 }
 
 /*****************************************************************************/
-
+#if 0
 void check_master_state(void)
 {
 	ec_master_state_t ms;
@@ -125,7 +123,7 @@ void CyclicMotor::startup() {
 
 
 
-void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, uint8_t *domain1_pd, vector<SlaveConfig> slaves) {
+void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, uint8_t *domain1_pd, std::vector<SlaveConfig> slaves) {
 
 	//cout << "cyclic_task::\n";
 
@@ -134,11 +132,7 @@ void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, uint8_t *
 	ecrt_domain_process(domain1);
 
 	// check process data state (optional)
-	//check_domain1_state();
-
-	counter = FREQUENCY / 10;
-	// calculate new process data
-	blink = !blink;
+	check_domain1_state(domain1);
 
 	// check for master state (optional)
 	//check_master_state();
@@ -148,30 +142,45 @@ void CyclicMotor::cyclic_task(ec_master_t *master, ec_domain *domain1, uint8_t *
 	//check_slave_config_states();
 
 	if (terminateFlg) {
-		std::cout << "terminating thread";
+		std::cout << "\nterminating thread";
 		std::terminate();
 		return;
 	}
 
-	// For now, only loop over slave #4
-	for (int si = 4; si < 5; si++) {
+	// read all values into the cache
+	// TODO: this could be in a separate thread
 
+	for (unsigned int si=0; si<slaves.size(); si++) {
+		SlaveConfig slaveConfig = slaves.at(si);
+		for (unsigned int i=0; i<slaveConfig.pdoEntries.size(); i++) {
+			PdoEntry pdoEntry = slaveConfig.pdoEntries.at(i);
+
+			// only fill the hash if there is no entry
+			int value = EC_READ_BIT(domain1_pd + pdoEntry.domainOffset, pdoEntry.domainBitPos);
+			//std::cout << "\nreading value = " << value << ", " << "offset = " << pdoEntry.domainOffset << ", bitpos = " << pdoEntry.domainBitPos;
+			//std::cout << ", slave = " << si << ", index = " << i;
+
+			// put in cache
+			PdoEntryCache *cache = PdoEntryCache::instance();
+			cache->updatePdoEntryValue(si, i, value);
+		}
+	}
+
+	// write all values in the queue
+	while (!CommandQueue::instance()->isEmpty()) {
+
+		PdoEntryValue pdoEntryValue = CommandQueue::instance()->getNext();
+
+		int index = pdoEntryValue.pdoEntryIndex;
+		int si = pdoEntryValue.slaveIndex;
 		SlaveConfig slaveConfig = slaves.at(si);
 
-		//cout << "cyclic_task::commandQueue isEmpty =  >>" << CommandQueue::instance()->isEmpty() << "<</n";
+		PdoEntry pdoEntry = slaveConfig.pdoEntries.at(index);
 
-		while (!CommandQueue::instance()->isEmpty()) {
+		std::cout << "\nwriting value = " << pdoEntryValue.entryValue << ", " << "offset = " << pdoEntry.domainOffset << ", bitpos = " << pdoEntry.domainBitPos;
 
-			PdoEntryValue pdoEntryValue = CommandQueue::instance()->getNext();
-			int index = pdoEntryValue.pdoEntryIndex;
+		EC_WRITE_BIT(domain1_pd + pdoEntry.domainOffset, pdoEntry.domainBitPos, pdoEntryValue.entryValue);
 
-			PdoEntry pdoEntry = slaveConfig.pdoEntries.at(index);
-
-			cout << "\nvalue = " << pdoEntryValue.entryValue << ", " << "offset = " << pdoEntry.domainOffset << ", bitpos = " << pdoEntry.domainBitPos;
-
-
-			EC_WRITE_BIT(domain1_pd + pdoEntry.domainOffset, pdoEntry.domainBitPos, pdoEntryValue.entryValue);
-		}
 	}
 
 	// send process data

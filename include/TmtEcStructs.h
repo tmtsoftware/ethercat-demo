@@ -3,9 +3,11 @@
 #define INCLUDE_TMTECSTRUCTS_H_
 
 struct PdoEntryValue {
+  unsigned int slaveIndex;
   unsigned int pdoEntryIndex;
   unsigned int entryValue;
 };
+
 
 struct Device {
   int deviceId;

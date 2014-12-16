@@ -5,13 +5,16 @@ all: ectest
 ETHER_LOC=/opt/etherlab
 
 CC=g++ 
-CFLAGS=-c -Wall -std=c++0x -pthread -D_GLIBCXX_USE_NANOSLEEP
+CFLAGS=-c -Wall -fPIC -std=c++0x -pthread -D_GLIBCXX_USE_NANOSLEEP
 INCS= -I$(ETHER_LOC)/include -I../include -I$(ETHER_LOC)/tool
 LOPTS=-Wl,-rpath=$(ETHER_LOC)/lib
 LIBS=-L$(ETHER_LOC)/lib -lethercat -lpthread
 
-ectest: UserExample.o EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o SyncManager.o Pdo.o PdoEntry.o SlaveConfig.o tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o 
-	$(CC) $(LOPTS) $(LIBS) -o $@ $^
+ectest: UserExample.o libtmtec.so
+	$(CC) $(LOPTS) $(LIBS) -L./ -ltmtec -o $@ $^
+
+libtmtec.so: EtherCatServer.o ConfigLoader.o CommandQueue.o PdoEntryCache.o NameMap.o CyclicMotor.o SyncManager.o Pdo.o PdoEntry.o SlaveConfig.o tinystr.o tinyxml.o tinyxmlerror.o tinyxmlparser.o 
+	$(CC) $(LOPTS) $(LIBS) -shared -o $@ $^
 
 UserExample.o: UserExample.cpp
 	$(CC) $(CFLAGS) $(INCS) $<

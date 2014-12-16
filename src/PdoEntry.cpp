@@ -18,4 +18,5 @@ PdoEntry::PdoEntry(std::string entryName, std::string pdoName, int index, int su
 	this->bitLength = bitLength;
 	this->domainOffset = 0;
 	this->domainBitPos = 0;
+
 };

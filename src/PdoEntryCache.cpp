@@ -1,20 +1,31 @@
 #include <iostream>
+#include <map>
 #include "ecrt.h"
 #include "TmtEcStructs.h"
 #include "PdoEntryCache.h"
-using namespace std;
 
 
- 
-PdoEntryCache::PdoEntryCache() {
+// Singleton pattern stuff
+
+PdoEntryCache* PdoEntryCache::pInstance = 0;
+
+PdoEntryCache* PdoEntryCache::instance() {
+   if (pInstance == 0) {
+      pInstance = new PdoEntryCache;
+   }
+   return pInstance;
+}
+
+void PdoEntryCache::updatePdoEntryValue(int slaveId, int pdoEntryId, int pdoEntryValue) {
+	int key = (slaveId * 1000) + pdoEntryId;
+	cacheMap[key] = pdoEntryValue;
 };
 
-void PdoEntryCache::updatePdoEntryValue(int pdoEntryId, PdoEntryValue pdoEntryValue) {
+int PdoEntryCache::getPdoEntryValue(int slaveId, int pdoEntryId) {
+	int key = (slaveId * 1000) + pdoEntryId;
 
-};
+	//std::cout << "\nKEY = " + key;
 
-PdoEntryValue PdoEntryCache::getPdoEntryValue(int pdoEntryId) {
-  PdoEntryValue value;
+  return cacheMap[key];
 
-  return value;
 };
