@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unistd.h>
 #include "EtherCatServer.h"
 
 
