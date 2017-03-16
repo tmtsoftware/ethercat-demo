@@ -55,3 +55,5 @@ Starting the server calls the start() method of the CyclicMotor that initializes
 Every time the CyclicMotor thread wakes up and updates its Domain process data, that data is copied to the PdoEntryCache singleton cache.  Whenever a call is made to getParameterValue in the EtherCatServer API, this call in turn calls the getPdoEntryValue() call on the singleton cache.  The value in the cache is always the most recently read value from the domain.
 
 Similarly, the EtherCatServer API call: setParameterValue() creates and populates PdoEntryValue structs and passes these to the CommandQueue singleton’s addToQueue() method.  The CommandQueue contains accumulated commands.  These commands are popped off the queue by the CyclicMotor thread each time it wakes up and finds entries on the queue.  All entries are sent out with the next datagram and the queue is emptied.
+
+Testing autobuild. Please ignore.
