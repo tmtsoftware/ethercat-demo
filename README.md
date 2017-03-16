@@ -56,4 +56,4 @@ Every time the CyclicMotor thread wakes up and updates its Domain process data, 
 
 Similarly, the EtherCatServer API call: setParameterValue() creates and populates PdoEntryValue structs and passes these to the CommandQueue singleton’s addToQueue() method.  The CommandQueue contains accumulated commands.  These commands are popped off the queue by the CyclicMotor thread each time it wakes up and finds entries on the queue.  All entries are sent out with the next datagram and the queue is emptied.
 
-Testing autobuild. Please ignore.
+
