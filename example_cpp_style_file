@@ -1,0 +1,7 @@
+Language: Cpp
+int formatted_code;
+// clang-format off
+    double x = y;
+// clang-format on
+AlignAfterOpenBracket: true
+AlignConsecutiveDeclarations: true
